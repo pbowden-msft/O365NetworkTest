@@ -2,7 +2,7 @@
 
 import json
 import sys
-import urllib2
+import urllib.request
 
 tool_name = 'Office 365 for Mac Network Tester'
 tool_version = '1.0'
@@ -28,20 +28,20 @@ text_normal = '\033[0m'
 ## FUNCTIONS
 def read_rules():
 	try:
-		response = urllib2.urlopen(json_endpoint_map)
+		response = urllib.request.urlopen(json_endpoint_map)
 		json_data = json.loads(response.read())
 	except:
-		print "Fatal: Unable to load list of endpoints from network"
+		print("Fatal: Unable to load list of endpoints from network")
 		sys.exit(1)
 	try:
-		for key, value in json_data['network'].iteritems():
+		for key, value in json_data['network'].items():
 			if key == 'version':
 				sys.stdout.write('\rRules version: {}'.format(value))
 				sys.stdout.flush()
 			if key == 'last-updated':
 				sys.stdout.write('\tLast updated: {}\n'.format(value))
 	except:
-		print "Fatal: Unable to determine rule version"
+		print("Fatal: Unable to determine rule version")
 		sys.exit(1)
 	return json_data
 
@@ -54,13 +54,15 @@ def print_response(code):
 def test_url(url, accept, reqtype, content, type, clientid, soapaction):
     if reqtype == 'POST':
         data = content
-        req = urllib2.Request(url, data)
+        data = data.encode('ascii') # data should be bytes
+        req = urllib.request.Request(url, data=data)
     elif reqtype == 'OPTIONS':
         data = content
-        req = urllib2.Request(url, data)
+        data = data.encode('ascii') # data should be bytes
+        req = urllib.request.Request(url, data=data)
         req.get_method = lambda: 'OPTIONS'
     else:
-        req = urllib2.Request(url)
+        req = urllib.request.Request(url)
     if accept:
         req.add_header('Accept', accept)
     if type:
@@ -72,17 +74,17 @@ def test_url(url, accept, reqtype, content, type, clientid, soapaction):
         req.add_header('SOAPAction', soapaction)
     req.add_header('User-Agent', 'Microsoft Office')
     try:
-        response = urllib2.urlopen(req)
+        response = urllib.request.urlopen(req)
         response.getcode()
-    except urllib2.HTTPError, e:
+    except urllib.request.HTTPError as e:
         return str(e.code) + str(' ') + str(e.reason)
-    except urllib2.URLError, e:
+    except urllib.request.URLError as e:
         return str(e.code) + str(' ') + str(e.reason)
     else:
         return response.code
 
 ## MAIN
-print text_blue + tool_name + ' - ' + tool_version + text_normal
+print(text_blue + tool_name + ' - ' + tool_version + text_normal)
 
 json_map = read_rules()
 for key in json_map['url-entry']:
@@ -92,5 +94,5 @@ for key in json_map['url-entry']:
 	http_resp = test_url(key['url-actual'], key['url-accept'], key['url-request'], key['url-post-content'], key['url-content-type'], key['url-client-id'], key['url-soap-action'])
 	print_response(http_resp)
 
-print ''
+print('')
 sys.exit(0)
